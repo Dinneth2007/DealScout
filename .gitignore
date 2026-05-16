@@ -1,0 +1,19 @@
+# Secrets / local state — golden rule #1
+.env
+*.db
+data/cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Sandbox: ignore everything except its README
+my_work/*
+!my_work/README.md
+
+# OS
+.DS_Store
