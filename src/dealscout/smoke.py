@@ -1,32 +1,29 @@
-"""Smoke test: prove the LLM adapter works end-to-end with Gemini.
+"""Smoke test through F01: runs the full intake pipeline on a known URL.
 
-Run:  uv run python -m dealscout.smoke
-Expected: 'OK: response received from <model>' + the model's reply.
-Side effect: a Langfuse trace if keys are configured.
+Run: uv run python -m dealscout.smoke
+Expected: a StartupBrief recognizably describing Stripe.
+Side effect: a Langfuse trace showing Triage -> handoff -> URLIntake -> fetch_url.
 """
 from __future__ import annotations
 
 import asyncio
 
-from agents import Agent
-
-from dealscout.adapters.llm import build_model, configure_provider, get_llm_client
-from dealscout.config import settings
+from dealscout.adapters.llm import configure_provider
 from dealscout.observability.tracing import init_tracing
+from dealscout.pipelines.intake import run_intake
 
 
 async def main() -> None:
-    configure_provider()  # wire SDK -> Gemini (must run before Agent use)
-    init_tracing()        # wire Langfuse (no-op if keys missing)
-
-    agent = Agent(
-        name="SmokeTestAgent",
-        instructions="You are a helpful assistant. Reply in one short sentence.",
-        model=build_model(settings.default_model),
+    configure_provider()
+    init_tracing()
+    brief = await run_intake("https://stripe.com")
+    print(f"OK: name={brief.name!r}")
+    print(f"    one_liner={brief.one_liner!r}")
+    print(
+        f"    headers ({len(brief.headers_or_sections)}): "
+        f"{brief.headers_or_sections[:3]}"
     )
-    result = await get_llm_client().run(agent, "Say 'hello' and the word 'OK'.")
-    print(f"OK: response received from {settings.default_model}")
-    print(f"Output: {result.final_output}")
+    print(f"    raw_text ({len(brief.raw_text)} chars): {brief.raw_text[:200]}...")
 
 
 if __name__ == "__main__":
