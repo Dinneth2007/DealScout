@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dealscout.adapters.llm import get_llm_client
 from dealscout.agents.company_researcher import build_company_researcher
+from dealscout.agents.founder_researcher import build_founder_researcher
 from dealscout.agents.market_researcher import build_market_researcher
 from dealscout.domain.brief import StartupBrief
 
@@ -48,6 +49,28 @@ One-liner: {brief.one_liner}
 Source: {brief.source_ref}
 
 Context from the source:
+{brief.raw_text[:4000]}
+"""
+
+    result = await get_llm_client().run(researcher, prompt_input, max_turns=10)
+    return result.final_output
+
+
+async def run_founder_research(brief: StartupBrief) -> str:
+    """Run the Founder Researcher on a StartupBrief. Returns Markdown notes.
+
+    Sibling researcher; "research the founders" framing keeps the agent on
+    the team, not the product or market.
+    """
+    researcher = build_founder_researcher()
+
+    prompt_input = f"""Please research the founders of this company.
+
+Company: {brief.name}
+One-liner: {brief.one_liner}
+Source: {brief.source_ref}
+
+Context from the source (may mention founders):
 {brief.raw_text[:4000]}
 """
 

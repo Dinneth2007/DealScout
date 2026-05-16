@@ -1,0 +1,13 @@
+input:
+  source_type: url
+  source_ref: https://stripe.com
+focus: founders
+expected_dimensions:
+  - "Names Patrick and John Collison"
+  - "Mentions their prior company (Auctomatic)"
+  - "Cites at least 2 sources"
+  - "Has an 'Open questions' section if any data was thin"
+notes: |
+  Known-good founder case. Stripe's founders are well-documented, so this
+  should be high-confidence; the honesty behaviour is exercised separately
+  on a small/obscure startup at smoke time (not formalized until F07).
