@@ -23,33 +23,44 @@ from dealscout.config import settings
 
 # --- Provider wiring -------------------------------------------------------
 # Called once at process startup, before any Agent is constructed. Rewires the
-# SDK's *default* client to Gemini's OpenAI-compatible endpoint.
+# SDK's default client to the selected provider's OpenAI-compatible endpoint.
+# Both providers are chat-completions only; provider differs by key+base_url.
+
+
+def _provider_creds() -> tuple[str, str]:
+    """(api_key, base_url) for the configured provider. Fails loud if the
+    selected provider's key is missing — never silently mid-call."""
+    if settings.llm_provider == "deepseek":
+        if not settings.deepseek_api_key:
+            raise RuntimeError(
+                "llm_provider=deepseek but DEEPSEEK_API_KEY is empty."
+            )
+        return settings.deepseek_api_key, settings.deepseek_base_url
+    return settings.gemini_api_key, settings.gemini_base_url
+
+
+def _client() -> AsyncOpenAI:
+    api_key, base_url = _provider_creds()
+    return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
 
 def configure_provider() -> None:
-    """Wire the Agents SDK to talk to Gemini. Call once at startup."""
-    gemini_client = AsyncOpenAI(
-        api_key=settings.gemini_api_key,
-        base_url=settings.gemini_base_url,
-    )
-    set_default_openai_client(gemini_client)
-    # Gemini's compatible endpoint is chat-completions only (no Responses API).
+    """Wire the Agents SDK to the selected provider. Call once at startup."""
+    set_default_openai_client(_client())
+    # Both Gemini and DeepSeek expose chat-completions only (no Responses API).
     set_default_openai_api("chat_completions")
     # The SDK's built-in trace exporter ships to OpenAI's backend, which 401s
-    # on a Gemini key. We trace via Langfuse instead, so disable it here.
+    # on a non-OpenAI key. We trace via Langfuse instead, so disable it here.
     set_tracing_disabled(True)
 
 
 def build_model(model_name: str) -> OpenAIChatCompletionsModel:
-    """Belt-and-suspenders: an explicit Gemini-bound model object for an Agent,
-    independent of global init order. Prefer this in agents over a bare string.
+    """Belt-and-suspenders: an explicit provider-bound model object for an
+    Agent, independent of global init order. Prefer this over a bare string.
     """
     return OpenAIChatCompletionsModel(
         model=model_name,
-        openai_client=AsyncOpenAI(
-            api_key=settings.gemini_api_key,
-            base_url=settings.gemini_base_url,
-        ),
+        openai_client=_client(),
     )
 
 

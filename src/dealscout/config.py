@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,6 +19,15 @@ class Settings(BaseSettings):
     # never silently mid-call (doc: "no silent fallbacks for required values")
     gemini_api_key: str = Field(min_length=1)
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+    # Provider switch. All LLM access still funnels through adapters/llm.py
+    # (golden rule #2); only the client's key+base_url change per provider.
+    llm_provider: Literal["gemini", "deepseek"] = "gemini"
+
+    # DeepSeek (OpenAI-compatible). Use deepseek-chat for tool-calling agents;
+    # deepseek-reasoner does NOT support function calling well.
+    deepseek_api_key: str = ""
+    deepseek_base_url: str = "https://api.deepseek.com"
 
     # Model tier mapping. VERIFY names against Google docs; they rename often.
     # 2.0-flash free-tier quota is now 0 (Google moved free tier to 2.5) —
