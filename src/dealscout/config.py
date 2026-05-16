@@ -19,10 +19,12 @@ class Settings(BaseSettings):
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
     # Model tier mapping. VERIFY names against Google docs; they rename often.
-    default_model: str = "gemini-2.0-flash"
+    # 2.0-flash free-tier quota is now 0 (Google moved free tier to 2.5) —
+    # verified 2026-05 against the live /models endpoint. Use 2.5-flash.
+    default_model: str = "gemini-2.5-flash"
     orchestrator_model: str = "gemini-2.5-pro"   # heavier reasoning
-    researcher_model: str = "gemini-2.0-flash"   # tool-heavy, fast
-    intake_model: str = "gemini-2.0-flash"
+    researcher_model: str = "gemini-2.5-flash"   # tool-heavy, fast
+    intake_model: str = "gemini-2.5-flash"
 
     # --- Observability ---
     langfuse_public_key: str = ""
