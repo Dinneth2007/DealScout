@@ -1,0 +1,10 @@
+input:
+  source_type: url
+  source_ref: https://modal.com
+expected_dimensions:
+  - "Mentions 'serverless' or 'compute infrastructure' as primary product"
+  - "References developer / ML engineer customer segment"
+  - "Cites at least 3 sources"
+  - "Has an 'Open questions' section"
+notes: |
+  Mid-difficulty. Modal is well-documented but smaller than Stripe.

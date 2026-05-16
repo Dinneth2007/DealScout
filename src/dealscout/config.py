@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     researcher_model: str = "gemini-2.5-flash"   # tool-heavy, fast
     intake_model: str = "gemini-2.5-flash"
 
+    # --- Search provider: Tavily (F02). Auth is Bearer header, not body. ---
+    tavily_api_key: str = Field(min_length=1)
+
     # --- Observability ---
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""

@@ -1,0 +1,11 @@
+input:
+  source_type: url
+  source_ref: https://stripe.com
+expected_dimensions:
+  - "Mentions 'payments' as primary product"
+  - "References at least 2 named customers OR explicit 'large customers' phrasing"
+  - "Cites at least 4 sources"
+  - "Lists at least 2 competitors"
+  - "Has an 'Open questions' section that is non-empty"
+notes: |
+  Easy case. If Stripe research fails here, prompts are deeply broken.
