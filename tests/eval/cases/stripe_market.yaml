@@ -1,0 +1,13 @@
+input:
+  source_type: url
+  source_ref: https://stripe.com
+focus: market
+expected_dimensions:
+  - "Names the payments / fintech industry"
+  - "Provides TAM with at least one cited assumption"
+  - "Lists at least 3 competitors with brief positioning"
+  - "Cites at least 3 sources"
+  - "Has a non-empty Open questions section"
+notes: |
+  Market focus on a data-rich company. Competitor list should be a broader
+  landscape than F02's "competitors mentioned in sources".

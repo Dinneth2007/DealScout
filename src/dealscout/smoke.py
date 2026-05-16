@@ -1,4 +1,4 @@
-"""Smoke test through F02: full intake + company research."""
+"""Smoke test through F03: full intake + company + market research."""
 from __future__ import annotations
 
 import asyncio
@@ -6,7 +6,7 @@ import asyncio
 from dealscout.adapters.llm import configure_provider
 from dealscout.observability.tracing import init_tracing
 from dealscout.pipelines.intake import run_intake
-from dealscout.pipelines.research import run_company_research
+from dealscout.pipelines.research import run_company_research, run_market_research
 
 
 async def main() -> None:
@@ -21,6 +21,10 @@ async def main() -> None:
     notes = await run_company_research(brief)
     print("=== COMPANY RESEARCH ===\n")
     print(notes)
+
+    notes_market = await run_market_research(brief)
+    print("\n=== MARKET RESEARCH ===\n")
+    print(notes_market)
 
 
 if __name__ == "__main__":

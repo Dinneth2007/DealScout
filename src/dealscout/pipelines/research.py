@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dealscout.adapters.llm import get_llm_client
 from dealscout.agents.company_researcher import build_company_researcher
+from dealscout.agents.market_researcher import build_market_researcher
 from dealscout.domain.brief import StartupBrief
 
 
@@ -30,3 +31,26 @@ Section headers / slide titles for structure hints:
 
     result = await get_llm_client().run(researcher, prompt_input, max_turns=10)
     return result.final_output  # str of Markdown
+
+
+async def run_market_research(brief: StartupBrief) -> str:
+    """Run the Market Researcher on a StartupBrief. Returns Markdown notes.
+
+    Sibling of run_company_research; the "research the MARKET" framing in the
+    input message keeps the agent focused on landscape, not the company.
+    """
+    researcher = build_market_researcher()
+
+    prompt_input = f"""Please research the market for this company.
+
+Company: {brief.name}
+One-liner: {brief.one_liner}
+Source: {brief.source_ref}
+
+Context from the source:
+{brief.raw_text[:4000]}
+"""
+
+    result = await get_llm_client().run(researcher, prompt_input, max_turns=10)
+    return result.final_output
+

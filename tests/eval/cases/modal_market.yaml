@@ -1,0 +1,13 @@
+input:
+  source_type: url
+  source_ref: https://modal.com
+focus: market
+expected_dimensions:
+  - "Names the cloud / serverless compute (or ML infra) market"
+  - "Provides a TAM figure or an explicit Fermi derivation with cited assumptions"
+  - "Lists at least 3 competitors with one-line positioning"
+  - "Cites at least 3 sources"
+  - "Has a non-empty Open questions section"
+notes: |
+  Second market case (Golden Rule #4 per-agent spirit). Mid-known company;
+  TAM likely needs Fermi derivation rather than a published number.
