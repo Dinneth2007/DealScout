@@ -1,38 +1,33 @@
-"""Smoke test through F03: full intake + company + market research."""
+"""Smoke test through F05: intake + full orchestrated research."""
 from __future__ import annotations
 
 import asyncio
+import time
 
 from dealscout.adapters.llm import configure_provider
 from dealscout.observability.tracing import init_tracing
+from dealscout.pipelines.analyze import run_analysis
 from dealscout.pipelines.intake import run_intake
-from dealscout.pipelines.research import (
-    run_company_research,
-    run_founder_research,
-    run_market_research,
-)
 
 
 async def main() -> None:
     configure_provider()
     init_tracing()
 
+    started = time.time()
     brief = await run_intake("https://stripe.com")
-    print("\n=== INTAKE ===")
+    print(f"\n=== INTAKE ({time.time() - started:.1f}s) ===")
     print(f"Name: {brief.name}")
     print(f"One-liner: {brief.one_liner}\n")
 
-    notes = await run_company_research(brief)
-    print("=== COMPANY RESEARCH ===\n")
-    print(notes)
+    started_analysis = time.time()
+    result = await run_analysis(brief)
+    analysis_elapsed = time.time() - started_analysis
+    total = time.time() - started
 
-    notes_market = await run_market_research(brief)
-    print("\n=== MARKET RESEARCH ===\n")
-    print(notes_market)
-
-    notes_founders = await run_founder_research(brief)
-    print("\n=== FOUNDER RESEARCH ===\n")
-    print(notes_founders)
+    print(f"=== SYNTHESIZED DOSSIER ({analysis_elapsed:.1f}s) ===\n")
+    print(result.dossier_markdown)
+    print(f"\n=== TOTAL: {total:.1f}s ===")
 
 
 if __name__ == "__main__":
