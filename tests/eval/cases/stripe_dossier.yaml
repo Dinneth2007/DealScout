@@ -1,0 +1,15 @@
+input:
+  source_type: url
+  source_ref: https://stripe.com
+focus: full-dossier
+expected_dimensions:
+  - "Has all template sections (at-a-glance, strongest, concerning, contradictions, confidence, narrative, open questions, sources)"
+  - "Integrated narrative connects company/market/founder findings — not just three subsections"
+  - "Confidence assessment names specific reasons (not vague 'strong')"
+  - "Contradictions section is non-empty OR explicitly states 'no major contradictions'"
+  - "Source map contains >= 8 unique URLs (~3 from each researcher)"
+notes: |
+  The integrated narrative is the litmus test. If it could be written
+  without all three researchers' inputs, the Orchestrator isn't synthesizing.
+  Verified manually on DeepSeek 2026-05-18: 46 sources, narrative threads
+  founders->product->market causally — passes.
