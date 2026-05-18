@@ -4,8 +4,7 @@ AI deal-flow analyst. Given a startup URL or pitch-deck PDF, produces a
 structured investment memo with a Pass / Track / Meet recommendation.
 
 Built on the OpenAI Agents SDK, pointed at Google Gemini via its
-OpenAI-compatible endpoint. See `CLAUDE.md` for the working model and
-`docs/features/` for feature specs.
+OpenAI-compatible endpoint. 
 
 ## Quickstart
 
