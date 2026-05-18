@@ -10,6 +10,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: PYTHONPATH
+        value: src
       - key: LLM_PROVIDER
         value: deepseek
       - key: DEEPSEEK_API_KEY
@@ -41,6 +43,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: PYTHONPATH
+        value: src
       - key: DEALSCOUT_API_BASE
         fromService:
           type: web
