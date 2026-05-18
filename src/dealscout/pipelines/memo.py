@@ -1,15 +1,47 @@
 from __future__ import annotations
 
+import json
+
 from pydantic import ValidationError
 
 from dealscout.adapters.llm import get_llm_client
 from dealscout.agents.memo_writer import build_memo_writer
 from dealscout.domain.memo import InvestmentMemo
 
+_MAXLEN = {
+    k: v["maxLength"]
+    for k, v in InvestmentMemo.model_json_schema()["properties"].items()
+    if isinstance(v, dict) and "maxLength" in v
+}
+
 # Bounded validation-feedback retry (golden rule #5). Reconstructs what the
 # SDK's native output_type did before DeepSeek rejected json_schema: on a
 # Pydantic failure, re-prompt with the exact errors so the model self-corrects.
 _MAX_ATTEMPTS = 3
+
+
+def _clip(s: str, limit: int) -> str:
+    s = s.strip()
+    if len(s) <= limit:
+        return s
+    cut = s[:limit]
+    for sep in (". ", "! ", "? "):
+        i = cut.rfind(sep)
+        if i > limit * 0.6:
+            return cut[: i + 1]
+    i = cut.rfind(" ")
+    return (cut[:i].rstrip() if i > 0 else cut[: limit - 1]) + "…"
+
+
+def _truncate_to_fit(raw: str) -> InvestmentMemo:
+    """Last resort: clip over-long string fields to their schema max so a
+    cosmetic length overrun can't hard-fail the live demo."""
+    data = json.loads(_extract_json(raw))
+    for key, limit in _MAXLEN.items():
+        val = data.get(key)
+        if isinstance(val, str) and len(val) > limit:
+            data[key] = _clip(val, limit)
+    return InvestmentMemo.model_validate(data)
 
 
 def _extract_json(text: str) -> str:
@@ -77,7 +109,13 @@ corrected JSON object.
 {_extract_json(raw)}
 """
 
-    raise RuntimeError(
-        f"Memo Writer failed schema validation after {_MAX_ATTEMPTS} attempts.\n"
-        f"Last error: {last_err}\nLast raw (600): {last_raw[:600]!r}"
-    )
+    # Retries exhausted — clip over-long fields and accept rather than fail
+    # the whole run on a length overrun.
+    try:
+        return _truncate_to_fit(last_raw)
+    except (ValidationError, json.JSONDecodeError) as e:
+        raise RuntimeError(
+            f"Memo Writer failed schema validation after {_MAX_ATTEMPTS} "
+            f"attempts and truncation.\nLast error: {last_err}\n"
+            f"Truncation error: {e}\nLast raw (600): {last_raw[:600]!r}"
+        ) from e

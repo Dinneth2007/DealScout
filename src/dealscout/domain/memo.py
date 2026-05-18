@@ -105,8 +105,8 @@ class InvestmentMemo(BaseModel):
 
     recent_news: list[NewsItem] = Field(default_factory=list, max_length=8)
 
-    bull_case: str = Field(..., min_length=100, max_length=600)
-    bear_case: str = Field(..., min_length=100, max_length=600)
+    bull_case: str = Field(..., min_length=100, max_length=1200)
+    bear_case: str = Field(..., min_length=100, max_length=1200)
     mind_changers: str = Field(
         ..., min_length=80,
         description="What evidence would change the recommendation.",
