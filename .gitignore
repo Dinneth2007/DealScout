@@ -17,3 +17,6 @@ my_work/*
 
 # OS
 .DS_Store
+
+# Generated memos
+output/

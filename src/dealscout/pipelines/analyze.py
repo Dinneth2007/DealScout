@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, NamedTuple
 
 from dealscout.adapters.llm import get_llm_client
 from dealscout.agents.orchestrator import build_orchestrator
 from dealscout.domain.brief import StartupBrief
+from dealscout.domain.memo import InvestmentMemo
+from dealscout.pipelines.intake import run_intake
+from dealscout.pipelines.memo import run_memo_writer
+from dealscout.rendering.markdown import render_markdown
+from dealscout.rendering.pdf import render_pdf
 
 
 class AnalysisResult(NamedTuple):
@@ -77,4 +83,38 @@ Section headers / slide titles (structure hints):
     result = await get_llm_client().run(orchestrator, prompt_input, max_turns=15)
     return AnalysisResult(
         dossier_markdown=_extract_dossier_from_result(result), brief=brief
+    )
+
+
+class FullAnalysisResult(NamedTuple):
+    brief: StartupBrief
+    dossier_markdown: str
+    memo: InvestmentMemo
+    pdf_path: str
+    markdown_path: str
+
+
+async def run_full_analysis(
+    input_str: str, output_dir: str = "./output"
+) -> FullAnalysisResult:
+    """End-to-end: input string -> memo PDF + Markdown.
+
+    Plain Python flow control (Decision A / F05 Decision 7): the order of
+    stages is deterministic; the LLM only decides inside each agent.
+    Caller must call configure_provider() once first.
+    """
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    brief = await run_intake(input_str)
+    analysis = await run_analysis(brief)
+    memo = await run_memo_writer(analysis.dossier_markdown)
+
+    safe = memo.company_name.lower().replace(" ", "_").replace("/", "_")
+    pdf_path = f"{output_dir}/memo_{safe}.pdf"
+    md_path = f"{output_dir}/memo_{safe}.md"
+    render_pdf(memo, pdf_path)
+    Path(md_path).write_text(render_markdown(memo))
+
+    return FullAnalysisResult(
+        brief, analysis.dossier_markdown, memo, pdf_path, md_path
     )
