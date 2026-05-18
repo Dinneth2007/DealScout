@@ -46,7 +46,4 @@ services:
       - key: PYTHONPATH
         value: src
       - key: DEALSCOUT_API_BASE
-        fromService:
-          type: web
-          name: dealscout-api
-          property: host
+        value: https://dealscout-api.onrender.com
