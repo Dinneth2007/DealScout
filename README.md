@@ -3,13 +3,8 @@
 A multi-agent system that turns a startup URL or pitch deck into a VC-style
 investment memo — researched, cited, and ending in a Pass / Track / Meet call.
 
-<<<<<<< Updated upstream
-Built on the OpenAI Agents SDK, pointed at Google Gemini via its
-OpenAI-compatible endpoint. 
-=======
 **Live demo:** https://dealscout-ui.onrender.com
 **API:** https://dealscout-api.onrender.com/docs
->>>>>>> Stashed changes
 
 ![DealScout UI](docs/screenshots/gradio_demo.png)
 
