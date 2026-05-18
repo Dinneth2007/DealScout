@@ -1,9 +1,4 @@
-"""Tavily web search. No LLM concerns. Never raises (errors as data).
-
-NOTE: the F02 doc passed the key as `api_key` in the JSON body — that is the
-OLD Tavily API and now fails. Current API requires Bearer auth in the header;
-verified live 2026-05. Body no longer carries the key.
-"""
+"""Tavily web search. Returns errors as data; never raises."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -38,7 +33,7 @@ async def search_tavily(
                 json={
                     "query": query,
                     "max_results": max_results,
-                    "search_depth": "basic",  # 'advanced' costs more credits
+                    "search_depth": "basic",
                     "include_answer": False,
                 },
             )

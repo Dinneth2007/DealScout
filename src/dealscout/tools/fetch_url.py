@@ -1,4 +1,3 @@
-"""The @function_tool wrapper. Thin — the adapter does the real work."""
 from __future__ import annotations
 
 from agents import function_tool

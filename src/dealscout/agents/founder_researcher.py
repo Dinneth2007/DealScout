@@ -10,8 +10,6 @@ from dealscout.tools.search_web import search_web
 
 
 def build_founder_researcher() -> Agent:
-    # Third clone of the researcher pattern (F02/F03). Only the prompt differs:
-    # founder data is thin/fragmented, so the prompt leans hard on gap-honesty.
     return Agent(
         name="FounderResearcher",
         instructions=load_prompt("founder_researcher"),

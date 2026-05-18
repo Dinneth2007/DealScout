@@ -1,4 +1,4 @@
-"""pypdf wrapper. No LLM concerns. Never raises (errors as data)."""
+"""pypdf wrapper. Never raises; errors returned as data."""
 from __future__ import annotations
 
 import re
@@ -30,13 +30,13 @@ async def parse_pdf_file(path: str) -> PdfResult:
     try:
         reader = PdfReader(str(p))
         pages = [page.extract_text() or "" for page in reader.pages]
-    except Exception as e:  # pypdf raises a zoo of exceptions; all become data
+    except Exception as e:
         return PdfResult(
             text="", slide_titles=[], page_count=0,
             detected_url=None, error=f"PDF parse error: {e}",
         )
 
-    # First non-empty line of each page ≈ slide title (rough but useful).
+    # first non-empty line of each page ≈ slide title
     slide_titles: list[str] = []
     for page_text in pages:
         first_line = next(
@@ -48,7 +48,7 @@ async def parse_pdf_file(path: str) -> PdfResult:
     urls = _URL_RE.findall("\n".join(pages))
     detected_url = urls[0] if urls else None
 
-    full_text = "\n".join(pages)[:16000]  # 2x scraper budget; decks are denser
+    full_text = "\n".join(pages)[:16000]
     return PdfResult(
         text=full_text,
         slide_titles=slide_titles,

@@ -1,4 +1,4 @@
-"""HTTP + HTML extraction. No LLM concerns. Never raises (errors as data)."""
+"""HTTP + HTML extraction. Never raises; errors returned as data."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,8 +19,7 @@ class ScrapeResult:
 async def scrape_url(url: str, timeout_seconds: float = 30.0) -> ScrapeResult:
     """Fetch a URL and extract title, main text, and section headers.
 
-    Never raises — returns ScrapeResult with .error populated on failure, so
-    the calling agent can *see* the failure and reason about it (Decision 6).
+    Never raises — returns ScrapeResult with .error set on failure.
     """
     try:
         async with httpx.AsyncClient(
@@ -34,7 +33,6 @@ async def scrape_url(url: str, timeout_seconds: float = 30.0) -> ScrapeResult:
         )
 
     soup = BeautifulSoup(resp.text, "html.parser")
-    # Strip nav/footer/scripts so the LLM sees content, not chrome.
     for tag in soup(["script", "style", "nav", "footer", "header"]):
         tag.decompose()
 

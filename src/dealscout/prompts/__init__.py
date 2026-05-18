@@ -1,20 +1,13 @@
-"""Prompt loader. Prompts are versioned files in the repo-root prompts/ dir
-(golden rule #3: never edit in place, add prompts/<name>_v<N>.md and bump).
-"""
+"""Loader for the versioned prompt files in prompts/."""
 from __future__ import annotations
 
 from pathlib import Path
 
-# src/dealscout/prompts/__init__.py -> parents[3] is the repo root.
 PROMPTS_DIR = Path(__file__).resolve().parents[3] / "prompts"
 
 
 def load_prompt(name: str, version: int | None = None) -> str:
-    """Load prompts/<name>_v<N>.md.
-
-    version=None picks the highest-numbered file (latest). Pass an int to pin
-    a specific version (e.g. when an eval froze against an older prompt).
-    """
+    """Load prompts/<name>_v<N>.md. version=None picks the highest N."""
     candidates = sorted(PROMPTS_DIR.glob(f"{name}_v*.md"))
     if not candidates:
         raise FileNotFoundError(

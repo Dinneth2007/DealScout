@@ -6,6 +6,8 @@ gr.Blocks, gr.Examples) are still present in v6.
 """
 from __future__ import annotations
 
+import logging
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -13,19 +15,53 @@ from pathlib import Path
 import gradio as gr
 import httpx
 
-API_BASE = "http://localhost:8000"
+from dealscout.service.rate_limit import check_rate_limit
+
+log = logging.getLogger(__name__)
+
+# Render injects DEALSCOUT_API_BASE via fromService as a bare host
+# ("dealscout-api.onrender.com"); locally it's a full URL. Normalize both.
+_raw = os.getenv("DEALSCOUT_API_BASE", "http://localhost:8000")
+API_BASE = _raw if _raw.startswith("http") else f"https://{_raw}"
 POLL_INTERVAL_SECONDS = 5
 
 
-def submit_and_wait(input_str: str, progress=gr.Progress()):
+def _prewarm_api() -> None:
+    """Ping the API once at UI startup to wake it from Render sleep."""
+    try:
+        httpx.get(f"{API_BASE}/health", timeout=5.0)
+        log.info("API pre-warm ping successful")
+    except Exception as e:  # noqa: BLE001 — best-effort, never blocks startup
+        log.warning("API pre-warm failed (OK on first deploy): %s", e)
+
+
+def _client_ip(request: gr.Request | None) -> str:
+    """Best-effort client IP. Render sets X-Forwarded-For."""
+    if request is None:
+        return ""
+    headers = dict(request.headers) if hasattr(request, "headers") else {}
+    ip = (headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if not ip and getattr(request, "client", None):
+        ip = request.client.host
+    return ip
+
+
+def submit_and_wait(
+    input_str: str, request: gr.Request, progress=gr.Progress()
+):
     """Submit an analysis, poll until done, return (pdf, md, summary, status)."""
     if not input_str or not input_str.strip():
         return None, None, "Please enter a URL or PDF path.", ""
 
+    rate_error = check_rate_limit(_client_ip(request))
+    if rate_error:
+        return None, None, f"⏱️ {rate_error}", ""
+
     progress(0, desc="Submitting...")
     try:
+        # >=45s: a cold Render API can take ~30s to wake on first call.
         r = httpx.post(
-            f"{API_BASE}/analyze", json={"input": input_str}, timeout=10
+            f"{API_BASE}/analyze", json={"input": input_str}, timeout=60
         )
         r.raise_for_status()
         job_id = r.json()["job_id"]
@@ -70,6 +106,8 @@ def submit_and_wait(input_str: str, progress=gr.Progress()):
 
         time.sleep(POLL_INTERVAL_SECONDS)
 
+
+_prewarm_api()  # nudge the API awake before the UI is even rendered
 
 with gr.Blocks(title="DealScout") as demo:  # theme -> launch() in Gradio 6
     gr.Markdown(
@@ -119,6 +157,7 @@ with gr.Blocks(title="DealScout") as demo:  # theme -> launch() in Gradio 6
 
 
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", "7860"))  # Render injects $PORT
     demo.launch(
-        server_name="0.0.0.0", server_port=7860, theme=gr.themes.Soft()
+        server_name="0.0.0.0", server_port=port, theme=gr.themes.Soft()
     )

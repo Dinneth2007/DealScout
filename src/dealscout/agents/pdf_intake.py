@@ -9,10 +9,9 @@ from dealscout.tools.parse_pdf import parse_pdf
 
 
 def build_pdf_intake_agent() -> Agent:
-    # No output_type — see url_intake.py. v2 prompt drives JSON output.
     return Agent(
         name="PDFIntake",
-        instructions=load_prompt("pdf_intake"),  # picks v2 (highest version)
+        instructions=load_prompt("pdf_intake"),
         tools=[parse_pdf],
         model=build_model(settings.intake_model),
     )

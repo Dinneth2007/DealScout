@@ -10,9 +10,6 @@ from dealscout.tools.search_web import search_web
 
 
 def build_company_researcher() -> Agent:
-    # No output_type: research is judgment work, free-form Markdown (Decision 3).
-    # Two narrow tools, not one mega-tool (Decision 2). Bounded at the run
-    # level via max_turns in the pipeline (Decision 7 / golden rule #5).
     return Agent(
         name="CompanyResearcher",
         instructions=load_prompt("company_researcher"),

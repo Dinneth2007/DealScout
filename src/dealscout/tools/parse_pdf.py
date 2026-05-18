@@ -1,4 +1,3 @@
-"""The @function_tool wrapper for PDF parsing. Thin — adapter does the work."""
 from __future__ import annotations
 
 from agents import function_tool

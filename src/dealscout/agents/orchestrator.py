@@ -10,16 +10,10 @@ from dealscout.config import settings
 from dealscout.prompts import load_prompt
 from dealscout.tools.write_dossier import write_dossier
 
-# Each wrapped researcher runs its own ReAct loop. Golden Rule #5 says every
-# agent has an explicit max_turns — the F05 doc omits it on as_tool(), so we
-# set it here. 10 matches the standalone researcher pipelines (F02-F04).
 _RESEARCHER_MAX_TURNS = 10
 
 
 def build_orchestrator() -> Agent:
-    # as_tool() wraps a full agent as one callable. tool_description is the
-    # Orchestrator LLM's only basis for picking the right specialist — write
-    # it like API docs (Decision 4).
     company_tool = build_company_researcher().as_tool(
         tool_name="research_company",
         tool_description=(
@@ -55,7 +49,5 @@ def build_orchestrator() -> Agent:
         name="InvestmentLead",
         instructions=load_prompt("orchestrator"),
         tools=[company_tool, market_tool, founder_tool, write_dossier],
-        # orchestrator_model should be the bigger model (Decision 2). Reads
-        # from settings (golden rule #2) — set ORCHESTRATOR_MODEL in .env.
         model=build_model(settings.orchestrator_model),
     )

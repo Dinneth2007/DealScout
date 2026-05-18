@@ -1,4 +1,3 @@
-"""The search_web @function_tool. Docstring = the LLM's manual for this tool."""
 from __future__ import annotations
 
 from agents import function_tool
