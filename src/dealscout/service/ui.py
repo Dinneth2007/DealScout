@@ -25,6 +25,12 @@ _raw = os.getenv("DEALSCOUT_API_BASE", "http://localhost:8000")
 API_BASE = _raw if _raw.startswith("http") else f"https://{_raw}"
 POLL_INTERVAL_SECONDS = 5
 
+# A cold Render free service can take ~50s to boot. While it does, the edge
+# proxy answers with these statuses (or the socket refuses) — transient.
+COLD_START_STATUSES = {502, 503, 504}
+WAKE_BUDGET_SECONDS = 90
+WAKE_RETRY_SECONDS = 5
+
 
 def _prewarm_api() -> None:
     """Ping the API once at UI startup to wake it from Render sleep."""
@@ -46,6 +52,40 @@ def _client_ip(request: gr.Request | None) -> str:
     return ip
 
 
+def _submit_with_wake(input_str: str, progress) -> str:
+    """POST /analyze, riding out a cold-API boot. Returns the job id.
+
+    A request that lands while the free-tier API is asleep gets a fast
+    502/503 from Render's proxy (or a refused connection) — not a slow
+    success — so a single attempt can't wait the boot out. Retry only
+    those, within a bounded window. A 4xx (bad input) or an app 500 is a
+    real failure: let it raise so we don't mask it behind "waking…".
+    """
+    deadline = time.time() + WAKE_BUDGET_SECONDS
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            r = httpx.post(
+                f"{API_BASE}/analyze", json={"input": input_str}, timeout=30
+            )
+            if r.status_code not in COLD_START_STATUSES:
+                r.raise_for_status()  # real 4xx/5xx propagates out untouched
+                return r.json()["job_id"]
+            last_error: Exception = httpx.HTTPStatusError(
+                f"{r.status_code} from edge proxy (API still booting)",
+                request=r.request,
+                response=r,
+            )
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as e:
+            last_error = e  # socket not accepting yet — still booting
+
+        if time.time() >= deadline:
+            raise last_error
+        progress(0, desc=f"Waking server, retrying… (attempt {attempt})")
+        time.sleep(WAKE_RETRY_SECONDS)
+
+
 def submit_and_wait(
     input_str: str, request: gr.Request, progress=gr.Progress()
 ):
@@ -59,12 +99,7 @@ def submit_and_wait(
 
     progress(0, desc="Submitting...")
     try:
-        # >=45s: a cold Render API can take ~30s to wake on first call.
-        r = httpx.post(
-            f"{API_BASE}/analyze", json={"input": input_str}, timeout=60
-        )
-        r.raise_for_status()
-        job_id = r.json()["job_id"]
+        job_id = _submit_with_wake(input_str, progress)
     except httpx.HTTPError as e:
         return None, None, f"Failed to submit job: {e}", ""
 
