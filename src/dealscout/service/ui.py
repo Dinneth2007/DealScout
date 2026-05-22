@@ -25,10 +25,14 @@ _raw = os.getenv("DEALSCOUT_API_BASE", "http://localhost:8000")
 API_BASE = _raw if _raw.startswith("http") else f"https://{_raw}"
 POLL_INTERVAL_SECONDS = 5
 
-# A cold Render free service can take ~50s to boot. While it does, the edge
-# proxy answers with these statuses (or the socket refuses) — transient.
+# A cold Render free service can take 90-150s to boot with our stack
+# (FastAPI + agents SDK + tracing init). The edge proxy answers with these
+# statuses, or the socket refuses, until uvicorn binds the port. A
+# scheduled GH Actions ping keeps the service hot in normal use; this
+# budget is the backstop for the case where the ping has been delayed or
+# the dyno was restarted by Render.
 COLD_START_STATUSES = {502, 503, 504}
-WAKE_BUDGET_SECONDS = 90
+WAKE_BUDGET_SECONDS = 180
 WAKE_RETRY_SECONDS = 5
 
 
