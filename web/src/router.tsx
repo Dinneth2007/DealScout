@@ -4,6 +4,7 @@ import LandingPage from "@/routes/index"
 import AnalyzePage from "@/routes/analyze"
 import MemoPage from "@/routes/memo.$id"
 import AboutPage from "@/routes/about"
+import NotFoundPage from "@/routes/not-found"
 
 export const router = createBrowserRouter([
   {
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
       { path: "analyze", Component: AnalyzePage },
       { path: "memo/:id", Component: MemoPage },
       { path: "about", Component: AboutPage },
+      { path: "*", Component: NotFoundPage },
     ],
   },
 ])
