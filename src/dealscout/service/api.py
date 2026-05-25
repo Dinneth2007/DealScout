@@ -7,15 +7,18 @@ semaphore inside execute_job.
 from __future__ import annotations
 
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from dealscout.adapters.llm import configure_provider
 from dealscout.observability.tracing import init_tracing
 from dealscout.service.jobs import JOBS, JobStatus, create_job, get_job
+from dealscout.service.rate_limit import check_rate_limit
 from dealscout.service.worker import execute_job
 
 
@@ -27,6 +30,32 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DealScout", version="1.0", lifespan=lifespan)
+
+# Allow the V2 React UI (and local dev) to call this API from the browser.
+# Extra origins can be added via DEALSCOUT_ALLOWED_ORIGINS (comma-separated)
+# without redeploying — handy for preview/branch URLs.
+_default_origins = [
+    "https://dealscout-web.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+_extra = [o.strip() for o in os.getenv("DEALSCOUT_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_default_origins + _extra,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+
+def _client_ip(request: Request) -> str:
+    """Best-effort client IP. Render sets X-Forwarded-For."""
+    forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    if request.client:
+        return request.client.host
+    return ""
 
 
 class AnalyzeRequest(BaseModel):
@@ -63,7 +92,10 @@ def _to_response(job) -> JobResponse:
 
 
 @app.post("/analyze", response_model=JobResponse)
-async def analyze(req: AnalyzeRequest) -> JobResponse:
+async def analyze(req: AnalyzeRequest, request: Request) -> JobResponse:
+    error = check_rate_limit(_client_ip(request))
+    if error:
+        raise HTTPException(status_code=429, detail=error)
     job = create_job(req.input)
     asyncio.create_task(execute_job(job))  # fire-and-forget; returns now
     return _to_response(job)
